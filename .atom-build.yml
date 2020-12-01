@@ -1,0 +1,13 @@
+cmd: "cargo"
+name: "build"
+sh: false
+cwd: "{PROJECT_PATH}"
+args:
+  - build
+targets:
+  run:
+    cmd: "./target/debug/aoc2020"
+    name: "run"
+    sh: false
+    cwd: "{PROJECT_PATH}"
+    args:
