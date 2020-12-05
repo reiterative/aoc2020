@@ -1,4 +1,8 @@
 mod utils;
+
+#[macro_use]
+use lazy_static::lazy_static;
+
 use crate::utils::{read_lines, read_numbers, read_strings};
 use itertools::Itertools;
 use regex::Regex;
@@ -129,8 +133,11 @@ impl PassportEntry {
         if self.fields.contains_key("hgt") {
             let mut valid = false;
             let value: &str = self.fields.get("hgt").unwrap();
-            let re = Regex::new(r"(\d*)([ci][mn])").unwrap();
-            let caps = re.captures(value);
+            lazy_static! {
+                static ref REHGT: Regex = Regex::new(r"(\d*)([ci][mn])").unwrap();
+            }
+
+            let caps = REHGT.captures(value);
             if caps.is_some() {
                 let height = caps.unwrap();
                 let htype = height.get(2).map_or("", |m| m.as_str());
@@ -154,8 +161,11 @@ impl PassportEntry {
     fn check_hcl(&self) -> bool {
         if self.fields.contains_key("hcl") {
             let value: &str = self.fields.get("hcl").unwrap();
-            let re = Regex::new(r"[#][0-9a-f]{6}").unwrap();
-            let caps = re.captures(value);
+            lazy_static! {
+                static ref REHCL: Regex = Regex::new(r"[#][0-9a-f]{6}").unwrap();
+            }
+
+            let caps = REHCL.captures(value);
             if caps.is_some() {
                 return true;
             } else {
