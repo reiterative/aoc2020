@@ -1,6 +1,4 @@
 mod utils;
-
-#[macro_use]
 use lazy_static::lazy_static;
 
 use crate::utils::{read_lines, read_numbers, read_strings};
@@ -278,7 +276,7 @@ mod test3 {
 
     #[test]
     fn test3_1() {
-        let mut valid = 0;
+        let valid;
         if let Ok(lines) = read_lines(TEST_FILE) {
             let strings = read_strings(lines);
             valid = day3_1(&strings);
@@ -290,7 +288,7 @@ mod test3 {
 
     #[test]
     fn test3_2() {
-        let mut valid = 0;
+        let valid;
         if let Ok(lines) = read_lines(TEST_FILE) {
             let strings = read_strings(lines);
             valid = day3_2(&strings, &day3_rules());
@@ -373,7 +371,7 @@ mod test2 {
 
     #[test]
     fn test2_1() {
-        let mut valid = 0;
+        let valid;
         if let Ok(lines) = read_lines(TEST_FILE) {
             let strings = read_strings(lines);
             valid = day2_1(&strings);
@@ -385,7 +383,7 @@ mod test2 {
 
     #[test]
     fn test2_2() {
-        let mut valid = 0;
+        let valid;
         if let Ok(lines) = read_lines(TEST_FILE) {
             let strings = read_strings(lines);
             valid = day2_2(&strings);
