@@ -1,14 +1,16 @@
 mod utils;
-
 use crate::utils::{read_lines, read_numbers, read_strings};
 use itertools::Itertools;
+use regex::Regex;
 use std::collections::HashMap;
 
 fn main() {
     if let Ok(lines) = read_lines("./data/input4") {
         let strings = read_strings(lines);
-        let valid = day4_1(&strings);
-        println!("Valid passports: {}", valid);
+        let check = day4_1(&strings);
+        println!("Valid passports (fields): {}", check);
+        let valid = day4_2(&strings);
+        println!("Valid passports (values): {}", valid);
     }
 }
 
@@ -16,6 +18,8 @@ fn main() {
 mod test4 {
     use super::*;
     static TEST_FILE: &str = "./test/test4";
+    static TEST_FILE_INVALID: &str = "./test/test4_invalid";
+    static TEST_FILE_VALID: &str = "./test/test4_valid";
 
     #[test]
     fn test4_1() {
@@ -27,6 +31,30 @@ mod test4 {
             panic!("Missing test file: {}", TEST_FILE)
         }
         assert_eq!(valid, 2);
+    }
+
+    #[test]
+    fn test4_2_invalid() {
+        let valid;
+        if let Ok(lines) = read_lines(TEST_FILE_INVALID) {
+            let strings = read_strings(lines);
+            valid = day4_2(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE_INVALID)
+        }
+        assert_eq!(valid, 0);
+    }
+
+    #[test]
+    fn test4_2_valid() {
+        let valid;
+        if let Ok(lines) = read_lines(TEST_FILE_VALID) {
+            let strings = read_strings(lines);
+            valid = day4_2(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE_VALID)
+        }
+        assert_eq!(valid, 3);
     }
 }
 
@@ -61,8 +89,15 @@ impl PassportEntry {
         true
     }
 
-    fn validate(&self) -> bool {
-        self.check_byr() && self.check_iyr() && self.check_eyr()
+    fn validate_fields(&self) -> bool {
+        self.check_fields()
+            && self.check_byr()
+            && self.check_iyr()
+            && self.check_eyr()
+            && self.check_hgt()
+            && self.check_hcl()
+            && self.check_ecl()
+            && self.check_pid()
     }
 
     fn check_byr(&self) -> bool {
@@ -78,15 +113,59 @@ impl PassportEntry {
     }
 
     fn check_year_range(&self, field: &str, min: u64, max: u64) -> bool {
+        let mut valid = false;
         if self.fields.contains_key(field) {
             let value = self.fields.get(field).unwrap();
             let year = check_num(value, 4);
             match year {
-                Some(y) => return y >= min && y <= max,
-                None => return false,
+                Ok(y) => valid = y >= min && y <= max,
+                Err(e) => println!("{}", e),
             }
         }
-        false
+        valid
+    }
+
+    fn check_hgt(&self) -> bool {
+        if self.fields.contains_key("hgt") {
+            let mut valid = false;
+            let value: &str = self.fields.get("hgt").unwrap();
+            let re = Regex::new(r"(\d*)([ci][mn])").unwrap();
+            let caps = re.captures(value);
+            if caps.is_some() {
+                let height = caps.unwrap();
+                let htype = height.get(2).map_or("", |m| m.as_str());
+                let hnum = height.get(1).map_or("", |m| m.as_str());
+                match htype {
+                    "cm" => valid = check_num_range(hnum, 150, 193),
+                    "in" => valid = check_num_range(hnum, 59, 76),
+                    _ => println!("Unknown heigth type: {}", htype),
+                }
+            }
+            if !valid {
+                println!("Height invalid: {}", value);
+            }
+            return valid;
+        } else {
+            println!("Height missing");
+            return false;
+        }
+    }
+
+    fn check_hcl(&self) -> bool {
+        if self.fields.contains_key("hcl") {
+            let value: &str = self.fields.get("hcl").unwrap();
+            let re = Regex::new(r"[#][0-9a-f]{6}").unwrap();
+            let caps = re.captures(value);
+            if caps.is_some() {
+                return true;
+            } else {
+                println!("Hair colour invalid: {}", value);
+                return false;
+            }
+        } else {
+            println!("Hair colour missing");
+            return false;
+        }
     }
 
     fn check_ecl(&self) -> bool {
@@ -105,20 +184,38 @@ impl PassportEntry {
         }
         false
     }
+
+    fn check_pid(&self) -> bool {
+        if self.fields.contains_key("pid") {
+            let value: &str = self.fields.get("pid").unwrap();
+            return check_num(value, 9).is_ok();
+        }
+        false
+    }
 }
 
-fn check_num(value: &str, required_len: usize) -> Option<u64> {
+fn check_num_range(value: &str, min: u64, max: u64) -> bool {
+    let num = value.parse::<u64>();
+    if num.is_ok() {
+        let num = num.unwrap();
+        return num >= min && num <= max;
+    }
+    false
+}
+
+fn check_num(value: &str, required_len: usize) -> Result<u64, String> {
     if value.len() == required_len {
         let num = value.parse::<u64>();
         if num.is_ok() {
-            return Some(num.unwrap());
+            return Ok(num.unwrap());
+        } else {
+            return Err(format!("Could not parse as u64: {}", value));
         }
     }
-    None
+    Err(format!("Wrong length: {}", value))
 }
 
-fn day4_1(strings: &Vec<String>) -> u32 {
-    let mut valid = 0;
+fn read_passports(strings: &Vec<String>) -> Vec<PassportEntry> {
     let mut entries: Vec<PassportEntry> = Vec::new();
     let mut fields = HashMap::new();
     for s in strings {
@@ -137,9 +234,26 @@ fn day4_1(strings: &Vec<String>) -> u32 {
             }
         }
     }
+    entries
+}
 
+fn day4_1(strings: &Vec<String>) -> u32 {
+    let mut valid = 0;
+    let entries = read_passports(strings);
     for p in entries {
         if p.check_fields() {
+            valid = valid + 1;
+        }
+    }
+
+    valid
+}
+
+fn day4_2(strings: &Vec<String>) -> u32 {
+    let mut valid = 0;
+    let entries = read_passports(strings);
+    for p in entries {
+        if p.validate_fields() {
             valid = valid + 1;
         }
     }
