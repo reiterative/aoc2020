@@ -4,16 +4,91 @@ use lazy_static::lazy_static;
 use crate::utils::{read_lines, read_numbers, read_strings};
 use itertools::Itertools;
 use regex::Regex;
+use std::cmp::max;
 use std::collections::HashMap;
 
 fn main() {
-    if let Ok(lines) = read_lines("./data/input4") {
+    if let Ok(lines) = read_lines("./data/input5") {
         let strings = read_strings(lines);
-        let check = day4_1(&strings);
-        println!("Valid passports (fields): {}", check);
-        let valid = day4_2(&strings);
-        println!("Valid passports (values): {}", valid);
+        let check = day5_1(&strings);
+        println!("Highest seat code: {}", check);
+        let seat = day5_2(&strings);
+        println!("My seat code?: {}", seat);
     }
+}
+
+#[cfg(test)]
+mod test5 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test5";
+    static TEST_CHECK: &str = "./test/test4_check";
+
+    #[test]
+    fn test4_1() {
+        let valid;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            valid = day5_1(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(valid, 820);
+    }
+}
+
+fn day5_1(strings: &Vec<String>) -> u32 {
+    let seats = get_seats(strings);
+    let mut high = 0;
+    for seat in seats.iter() {
+        high = max(high, *seat);
+    }
+    high
+}
+
+fn day5_2(strings: &Vec<String>) -> u32 {
+    let mut seats = get_seats(strings);
+    seats.sort();
+    let mut prev = 0;
+    let mut target = 0;
+    for seat in seats.iter() {
+        println!("Seat: {}", seat);
+        if seat - prev == 2 {
+            println!("My seat?: {}", prev + 1);
+            target = prev + 1;
+        }
+        prev = *seat;
+    }
+    target
+}
+
+fn get_seats(strings: &Vec<String>) -> Vec<u32> {
+    let mut seats: Vec<u32> = Vec::new();
+    for s in strings.iter() {
+        let mut row = (0, 127, 128);
+        let mut col = (0, 7, 8);
+        for c in s.chars() {
+            match c {
+                'B' => row = upper(row),
+                'F' => row = lower(row),
+                'L' => col = lower(col),
+                'R' => col = upper(col),
+                _ => println!("Invalid character"),
+            }
+            //println!("col: {:?} row: {:?}", col, row);
+        }
+        let seat: u32 = ((row.0 * 8) + col.0) as u32;
+        //println!("c`ode: {} - col: {} row: {} seat: {}", s, col.0, row.0, seat);
+        seats.push(seat);
+    }
+    seats
+}
+
+fn lower(range: (u16, u16, u16)) -> (u16, u16, u16) {
+    (range.0, range.1 - (range.2 / 2), range.2 / 2)
+}
+
+fn upper(range: (u16, u16, u16)) -> (u16, u16, u16) {
+    (range.0 + (range.2 / 2), range.1, range.2 / 2)
 }
 
 #[cfg(test)]
