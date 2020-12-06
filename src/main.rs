@@ -12,7 +12,11 @@ fn main() {
         //if let Ok(lines) = read_lines("./test/test6") {
         let strings = read_strings(lines);
         let sum = day6_1(&strings);
-        println!("Sum: {}", sum);
+        println!("Sum (any): {}", sum);
+        let sum = day6_2(&strings);
+        println!("Sum (all): {}", sum);
+    } else {
+        println!("Input file missing!")
     }
 }
 
@@ -32,41 +36,89 @@ mod test6 {
         }
         assert_eq!(sum, 11);
     }
+
+    #[test]
+    fn test6_2() {
+        let sum;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            sum = day6_2(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(sum, 6);
+    }
 }
 
-fn day6_1(strings: &Vec<String>) -> u32 {
-    let mut groups: Vec<HashMap<char, u16>> = Vec::new();
-    let mut answers: HashMap<char, u16> = HashMap::new();
+struct AnswerGroup {
+    answers: HashMap<char, u16>,
+    size: u16,
+}
+
+impl AnswerGroup {
+    fn new() -> AnswerGroup {
+        let answers: HashMap<char, u16> = HashMap::new();
+        AnswerGroup { answers, size: 0}
+    }
+}
+
+fn get_answer_groups(strings: &Vec<String>) -> Vec<AnswerGroup> {
+    let mut groups: Vec<AnswerGroup> = Vec::new();
+    let mut group = AnswerGroup::new();
     for s in strings.iter() {
         if s.len() == 0 {
             // start a new group
-            groups.push(answers);
-            answers = HashMap::new();
+            groups.push(group);
+            group = AnswerGroup::new();
         } else {
+            group.size = group.size + 1;
             for c in s.chars() {
-                if let Some(count) = answers.get_mut(&c) {
+                if let Some(count) = group.answers.get_mut(&c) {
                     *count = *count + 1;
                 } else {
-                    answers.insert(c, 1);
+                    group.answers.insert(c, 1);
                 }
             }
         }
     }
     // Save final group
-    if answers.len() > 0 {
-        groups.push(answers);
+    if group.size > 0 {
+        groups.push(group);
     }
+    groups
+}
 
+fn day6_1(strings: &Vec<String>) -> u32 {
+    let groups = get_answer_groups(strings);
     let mut sum = 0;
     let mut group = 0;
     for g in groups.iter() {
         let mut count = 0;
-        for (q, a) in g.iter() {
+        for (_q, a) in g.answers.iter() {
             if *a > 0 {
                 count = count + 1;
             }
         }
-        println!("Group {} count: {}", group, count);
+        //println!("Group {} count: {}", group, count);
+        group = group + 1;
+        sum = sum + count;
+    }
+
+    sum
+}
+
+fn day6_2(strings: &Vec<String>) -> u32 {
+    let groups = get_answer_groups(strings);
+    let mut sum = 0;
+    let mut group = 0;
+    for g in groups.iter() {
+        let mut count = 0;
+        for (_q, a) in g.answers.iter() {
+            if *a == g.size {
+                count = count + 1;
+            }
+        }
+        //println!("Group {} count: {}", group, count);
         group = group + 1;
         sum = sum + count;
     }
