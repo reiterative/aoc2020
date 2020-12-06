@@ -8,13 +8,70 @@ use std::cmp::max;
 use std::collections::HashMap;
 
 fn main() {
-    if let Ok(lines) = read_lines("./data/input5") {
+    if let Ok(lines) = read_lines("./data/input6") {
+        //if let Ok(lines) = read_lines("./test/test6") {
         let strings = read_strings(lines);
-        let check = day5_1(&strings);
-        println!("Highest seat code: {}", check);
-        let seat = day5_2(&strings);
-        println!("My seat code?: {}", seat);
+        let sum = day6_1(&strings);
+        println!("Sum: {}", sum);
     }
+}
+
+#[cfg(test)]
+mod test6 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test6";
+
+    #[test]
+    fn test6_1() {
+        let sum;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            sum = day6_1(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(sum, 11);
+    }
+}
+
+fn day6_1(strings: &Vec<String>) -> u32 {
+    let mut groups: Vec<HashMap<char, u16>> = Vec::new();
+    let mut answers: HashMap<char, u16> = HashMap::new();
+    for s in strings.iter() {
+        if s.len() == 0 {
+            // start a new group
+            groups.push(answers);
+            answers = HashMap::new();
+        } else {
+            for c in s.chars() {
+                if let Some(count) = answers.get_mut(&c) {
+                    *count = *count + 1;
+                } else {
+                    answers.insert(c, 1);
+                }
+            }
+        }
+    }
+    // Save final group
+    if answers.len() > 0 {
+        groups.push(answers);
+    }
+
+    let mut sum = 0;
+    let mut group = 0;
+    for g in groups.iter() {
+        let mut count = 0;
+        for (q, a) in g.iter() {
+            if *a > 0 {
+                count = count + 1;
+            }
+        }
+        println!("Group {} count: {}", group, count);
+        group = group + 1;
+        sum = sum + count;
+    }
+
+    sum
 }
 
 #[cfg(test)]
@@ -24,7 +81,7 @@ mod test5 {
     static TEST_CHECK: &str = "./test/test4_check";
 
     #[test]
-    fn test4_1() {
+    fn test5_1() {
         let valid;
         if let Ok(lines) = read_lines(TEST_FILE) {
             let strings = read_strings(lines);
