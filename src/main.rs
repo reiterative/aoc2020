@@ -5,21 +5,153 @@ use crate::utils::{read_lines, read_numbers, read_strings};
 use itertools::Itertools;
 use regex::Regex;
 use std::cmp::max;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 fn main() {
-    if let Ok(lines) = read_lines("./data/input6") {
-        //if let Ok(lines) = read_lines("./test/test6") {
+    //if let Ok(lines) = read_lines("./data/input7") {
+    if let Ok(lines) = read_lines("./test/test7_2") {
         let strings = read_strings(lines);
-        let sum = day6_1(&strings);
-        println!("Sum (any): {}", sum);
-        let sum = day6_2(&strings);
-        println!("Sum (all): {}", sum);
+        let count = day7_1(&strings);
+        println!("Shiny gold bags may be contained by {} other bags", count);
+        let count = day7_2(&strings);
+        println!("Shiny gold bags may contain {} other bags", count);
     } else {
         println!("Input file missing!")
     }
 }
 
+#[cfg(test)]
+mod test7 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test7";
+    static TEST_FILE_2: &str = "./test/test7_2";
+
+    #[test]
+    fn test7_1() {
+        let total;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            total = day7_1(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(total, 4);
+    }
+
+    #[test]
+    fn test7_2() {
+        let total;
+        if let Ok(lines) = read_lines(TEST_FILE_2) {
+            let strings = read_strings(lines);
+            total = day7_2(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE_2)
+        }
+        assert_eq!(total, 126);
+    }
+}
+
+pub struct BagRule {
+    bag: String,
+    contents: Vec<(u8, String)>,
+}
+
+fn get_outer_bags<'a>(target: &str, rules: &'a HashMap<String, Vec<(u8, String)>>) -> Vec<&'a str> {
+    let mut bags: Vec<&str> = Vec::new();
+    for (bag, r) in rules {
+        for (num, name) in r {
+            if name == target {
+                bags.push(&bag);
+            }
+        }
+    }
+    bags
+}
+
+fn get_inner_bags<'a>(target: &str, rules: &'a HashMap<String, Vec<(u8, String)>>) -> u64 {
+    let mut count = 0;
+    if let Some(bag) = rules.get(target) {
+        println!("{} bags contain:", target);
+        for (num, name) in bag {
+            println!("   - {} {} bags", num, name);
+            let contents = get_inner_bags(name, rules);
+            println!("      - which contain {} other bags", contents);
+            let m: u64 = *num as u64;
+            count = count + (contents * m);
+            println!("      - making {} accumulated bags", count);
+        }
+    }
+    println!("{} bags contain {} other bags", target, count);
+    count
+}
+
+fn get_bag_rules(strings: &Vec<String>) -> HashMap<String, Vec<(u8, String)>> {
+    let mut rules: HashMap<String, Vec<(u8, String)>> = HashMap::new();
+    lazy_static! {
+        static ref REBAGHD: Regex = Regex::new(r"([a-z]*\s[a-z]*)\sbags\scontain").unwrap();
+        static ref REBAGIT: Regex = Regex::new(r"(\d+)\s([a-z]*\s[a-z]*)\sbags?[.,]").unwrap();
+    }
+    for s in strings.iter() {
+        let head = REBAGHD.captures(s);
+        if head.is_some() {
+            let bag = head.unwrap()[1].to_string();
+            let mut contents: Vec<(u8, String)> = Vec::new();
+            println!("{} bags contain:", bag);
+            for item in REBAGIT.captures_iter(s) {
+                let num = item[1].parse::<u8>().unwrap();
+                let nam = item[2].to_string();
+                println!("- {} {} bags", num, nam);
+                contents.push((num, nam));
+            }
+            rules.insert(bag, contents);
+        }
+    }
+    rules
+}
+
+fn day7_2(strings: &Vec<String>) -> u64 {
+    let mut rules: HashMap<String, Vec<(u8, String)>> = get_bag_rules(strings);
+    let mut bagset: HashSet<String> = HashSet::new();
+    let count = get_inner_bags("shiny gold", &rules);
+    count
+}
+
+fn day7_1(strings: &Vec<String>) -> u32 {
+    let mut rules: HashMap<String, Vec<(u8, String)>> = get_bag_rules(strings);
+    let mut bagset: HashSet<String> = HashSet::new();
+    let bags = get_outer_bags("shiny gold", &rules);
+    println!("First pass:");
+    for b in bags.iter() {
+        println!("- found: {}", b);
+        bagset.insert(b.to_string());
+    }
+
+    let mut growing = true;
+    let mut count = 0;
+    while growing {
+        let mut bags = Vec::new();
+        for b in bagset.iter() {
+            let more = get_outer_bags(b, &rules);
+            for m in more.iter() {
+                println!("- found: {}", m);
+                bags.push(m.to_string());
+            }
+        }
+        for b in bags.iter() {
+            bagset.insert(b.to_string());
+        }
+        if count == bagset.len() {
+            // exit loop if we haven't found any more viable outer bags
+            growing = false;
+        } else {
+            count = bagset.len();
+            println!("recursing");
+        }
+    }
+
+    bagset.len() as u32
+}
+// ===================================================================================
 #[cfg(test)]
 mod test6 {
     use super::*;
@@ -58,7 +190,7 @@ struct AnswerGroup {
 impl AnswerGroup {
     fn new() -> AnswerGroup {
         let answers: HashMap<char, u16> = HashMap::new();
-        AnswerGroup { answers, size: 0}
+        AnswerGroup { answers, size: 0 }
     }
 }
 
