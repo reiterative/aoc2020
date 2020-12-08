@@ -8,8 +8,8 @@ use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    //if let Ok(lines) = read_lines("./data/input7") {
-    if let Ok(lines) = read_lines("./test/test7_2") {
+    if let Ok(lines) = read_lines("./data/input7") {
+        //if let Ok(lines) = read_lines("./test/test7_2") {
         let strings = read_strings(lines);
         let count = day7_1(&strings);
         println!("Shiny gold bags may be contained by {} other bags", count);
@@ -77,7 +77,7 @@ fn get_inner_bags<'a>(target: &str, rules: &'a HashMap<String, Vec<(u8, String)>
             let contents = get_inner_bags(name, rules);
             println!("      - which contain {} other bags", contents);
             let m: u64 = *num as u64;
-            count = count + (contents * m);
+            count = count + (contents * m) + m;
             println!("      - making {} accumulated bags", count);
         }
     }
@@ -96,11 +96,11 @@ fn get_bag_rules(strings: &Vec<String>) -> HashMap<String, Vec<(u8, String)>> {
         if head.is_some() {
             let bag = head.unwrap()[1].to_string();
             let mut contents: Vec<(u8, String)> = Vec::new();
-            println!("{} bags contain:", bag);
+            //println!("{} bags contain:", bag);
             for item in REBAGIT.captures_iter(s) {
                 let num = item[1].parse::<u8>().unwrap();
                 let nam = item[2].to_string();
-                println!("- {} {} bags", num, nam);
+                //println!("- {} {} bags", num, nam);
                 contents.push((num, nam));
             }
             rules.insert(bag, contents);
