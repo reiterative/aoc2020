@@ -8,16 +8,86 @@ use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    if let Ok(lines) = read_lines("./data/input7") {
+    if let Ok(lines) = read_lines("./data/input8") {
         //if let Ok(lines) = read_lines("./test/test7_2") {
         let strings = read_strings(lines);
-        let count = day7_1(&strings);
-        println!("Shiny gold bags may be contained by {} other bags", count);
-        let count = day7_2(&strings);
-        println!("Shiny gold bags may contain {} other bags", count);
+        let acc = day8_1(&strings);
+        println!("Accumulator contains: {}", acc);
     } else {
         println!("Input file missing!")
     }
+}
+
+enum VM_Op {
+    invalid,
+    nop,
+    acc,
+    jmp
+}
+
+struct Instruction {
+    op: VM_Op,
+    val: i32,
+}
+
+struct VirtualMachine {
+    code: Vec<Instruction>,
+    pc: u32,
+    acc: u64,
+    trace: HashSet<u32>,
+}
+
+impl VirtualMachine {
+    fn new(strings: &Vec<String>) -> VirtualMachine {
+        let mut code: Vec<Instruction> = Vec::new();
+        let trace: HashSet<u32> = HashSet::new();
+        for s in strings {
+            let words: Vec<&str> = s.split(' ').collect();
+            if let Some(op_s) = words.get(0) {
+                if let Some(val_s) = words.get(1) {
+                    if let Ok(val) = val_s.parse::<i32>() {
+                        let op;
+                        match *op_s {
+                            "nop" => op = VM_Op::nop,
+                            "acc" => op = VM_Op::acc,
+                            "jmp" => op = VM_Op::jmp,
+                            _ => op = VM_Op::invalid
+                        }
+                        println!("Instruction: {} {}", op_s, val);
+                        code.push( Instruction {op, val});
+                    } else {
+                        println!("{} could not be parsed as i32", val_s);
+                    }
+                } else {
+                    println!("Could locate val in {}", s);
+                }
+            } else {
+                println!("Could locate op in {}", s);
+            }
+        }
+        VirtualMachine {code, pc: 0, acc: 0, trace}
+    }
+
+    fn run_to_repeat(&mut self) -> u64 {
+        self.trace.clear();
+        let mut run = true;
+        while (run) {
+            if self.trace.contains(&self.pc) {
+                run == false;
+            } else {
+            self.trace.insert(self.pc);    
+            }
+        }
+        self.acc
+    }
+}
+
+fn day8_1(strings: &Vec<String>) -> u64 {
+    let acc: u64 = 0;
+    let vm: VirtualMachine = VirtualMachine::new(strings);
+
+
+    acc
 }
 
 #[cfg(test)]
