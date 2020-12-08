@@ -13,34 +13,72 @@ fn main() {
         let strings = read_strings(lines);
         let acc = day8_1(&strings);
         println!("Accumulator contains: {}", acc);
+        let acc = day8_2(&strings);
+        println!("Accumulator contains: {}", acc);
     } else {
-        println!("Input file missing!")
+        panic!("Input file missing!")
     }
 }
 
-enum VM_Op {
-    invalid,
-    nop,
-    acc,
-    jmp
+#[cfg(test)]
+mod test8 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test8";
+
+    #[test]
+    fn test8_1() {
+        let acc;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            acc = day8_1(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(acc, 5);
+    }
+
+    #[test]
+    fn test8_2() {
+        let acc;
+        if let Ok(lines) = read_lines(TEST_FILE) {
+            let strings = read_strings(lines);
+            acc = day8_2(&strings);
+        } else {
+            panic!("Missing test file: {}", TEST_FILE)
+        }
+        assert_eq!(acc, 8);
+    }
 }
 
+#[derive(Clone, PartialEq, Eq)]
+enum VmOp {
+    Invalid,
+    Nop,
+    Acc,
+    Jmp,
+}
+
+#[derive(Clone)]
 struct Instruction {
-    op: VM_Op,
+    op: VmOp,
     val: i32,
 }
 
+#[derive(Clone)]
 struct VirtualMachine {
     code: Vec<Instruction>,
     pc: u32,
-    acc: u64,
+    acc: i64,
     trace: HashSet<u32>,
+    run: bool,
+    debug: bool,
 }
 
 impl VirtualMachine {
-    fn new(strings: &Vec<String>) -> VirtualMachine {
+    fn new(strings: &Vec<String>, debug: bool) -> VirtualMachine {
         let mut code: Vec<Instruction> = Vec::new();
         let trace: HashSet<u32> = HashSet::new();
+        let mut i = 0;
         for s in strings {
             let words: Vec<&str> = s.split(' ').collect();
             if let Some(op_s) = words.get(0) {
@@ -48,13 +86,16 @@ impl VirtualMachine {
                     if let Ok(val) = val_s.parse::<i32>() {
                         let op;
                         match *op_s {
-                            "nop" => op = VM_Op::nop,
-                            "acc" => op = VM_Op::acc,
-                            "jmp" => op = VM_Op::jmp,
-                            _ => op = VM_Op::invalid
+                            "nop" => op = VmOp::Nop,
+                            "acc" => op = VmOp::Acc,
+                            "jmp" => op = VmOp::Jmp,
+                            _ => op = VmOp::Invalid,
                         }
-                        println!("Instruction: {} {}", op_s, val);
-                        code.push( Instruction {op, val});
+                        if debug {
+                            println!("Instruction {}: {} {}", i, op_s, val);
+                        }
+                        code.push(Instruction { op, val });
+                        i = i + 1;
                     } else {
                         println!("{} could not be parsed as i32", val_s);
                     }
@@ -65,28 +106,109 @@ impl VirtualMachine {
                 println!("Could locate op in {}", s);
             }
         }
-        VirtualMachine {code, pc: 0, acc: 0, trace}
+        VirtualMachine {
+            code,
+            pc: 0,
+            acc: 0,
+            trace,
+            run: false,
+            debug,
+        }
     }
 
-    fn run_to_repeat(&mut self) -> u64 {
+    fn run_to_repeat(&mut self) -> i64 {
         self.trace.clear();
-        let mut run = true;
-        while (run) {
+        self.pc = 0;
+        self.acc = 0;
+        self.run = true;
+        while (self.run) {
             if self.trace.contains(&self.pc) {
-                run == false;
+                self.run = false;
+                println!("Repeat at {}", self.pc);
             } else {
-            self.trace.insert(self.pc);    
+                self.trace.insert(self.pc);
+                if self.debug {
+                    print!("{} -> ", self.pc);
+                }
+                if let Some(i) = self.code.get(self.pc as usize) {
+                    match i.op {
+                        VmOp::Nop => self.nop(i.val),
+                        VmOp::Acc => self.acc(i.val),
+                        VmOp::Jmp => self.jmp(i.val),
+                        VmOp::Invalid => self.err(),
+                    }
+                    if self.normal_exit() {
+                        self.run = false;
+                    }
+                }
             }
         }
         self.acc
     }
+
+    fn nop(&mut self, val: i32) {
+        // Do nothing
+        self.pc = self.pc + 1;
+    }
+
+    fn acc(&mut self, val: i32) {
+        self.acc = self.acc + val as i64;
+        self.pc = self.pc + 1;
+    }
+
+    fn jmp(&mut self, val: i32) {
+        let pc = self.pc as i64 + val as i64;
+        if pc < 0 {
+            println!("Error: jmp to invalid instruction at {}", self.pc);
+            self.run = false;
+        } else {
+            self.pc = pc as u32;
+        }
+    }
+
+    fn err(&mut self) {
+        println!("Error: invalid op code at {}", self.pc);
+        self.run = false;
+    }
+
+    fn normal_exit(&self) -> bool {
+        self.pc == self.code.len() as u32
+    }
+
+    fn switch(&mut self, i: usize) {
+        if let Some(mut it) = self.code.get_mut(i) {
+            if it.op == VmOp::Jmp {
+                it.op = VmOp::Nop;
+            } else if it.op == VmOp::Nop {
+                it.op = VmOp::Jmp;
+            } else {
+                panic!("Invalid switch operation!")
+            }
+        }
+    }
 }
 
-fn day8_1(strings: &Vec<String>) -> u64 {
-    let acc: u64 = 0;
-    let vm: VirtualMachine = VirtualMachine::new(strings);
+fn day8_1(strings: &Vec<String>) -> i64 {
+    VirtualMachine::new(strings, false).run_to_repeat()
+}
 
-
+fn day8_2(strings: &Vec<String>) -> i64 {
+    let acc = 0;
+    let vm = VirtualMachine::new(strings, false);
+    let mut dvm = vm.clone();
+    let mut i = 0;
+    for mut it in vm.code {
+        if it.op == VmOp::Jmp || it.op == VmOp::Nop {
+            dvm.switch(i);
+            dvm.run_to_repeat();
+            dvm.switch(i);
+            if dvm.normal_exit() {
+                println!("Normal end!");
+                return dvm.acc;
+            }
+        }
+        i = i + 1;
+    }
     acc
 }
 
