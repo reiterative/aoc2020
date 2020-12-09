@@ -10,12 +10,28 @@ pub fn get_strings(filename: &str) -> Vec<String> {
     }
 }
 
-pub fn read_numbers(lines: io::Lines<io::BufReader<File>>) -> Vec<i32> {
+pub fn get_signed(filename: &str) -> Vec<i64> {
+    if let Ok(lines) = read_lines(filename) {
+        read_signed(lines)
+    } else {
+        panic!("Could not open file: {}", filename)
+    }
+}
+
+pub fn get_unsigned(filename: &str) -> Vec<u64> {
+    if let Ok(lines) = read_lines(filename) {
+        read_unsigned(lines)
+    } else {
+        panic!("Could not open file: {}", filename)
+    }
+}
+
+fn read_unsigned(lines: io::Lines<io::BufReader<File>>) -> Vec<u64> {
     // Consumes the iterator, returns an (Optional) String
     let mut numbers = Vec::new();
     for line in lines {
         if let Ok(ip) = line {
-            let i = ip.parse::<i32>().unwrap();
+            let i = ip.parse::<u64>().unwrap();
             numbers.push(i);
         }
     }
@@ -23,7 +39,20 @@ pub fn read_numbers(lines: io::Lines<io::BufReader<File>>) -> Vec<i32> {
     numbers
 }
 
-pub fn read_strings(lines: io::Lines<io::BufReader<File>>) -> Vec<String> {
+fn read_signed(lines: io::Lines<io::BufReader<File>>) -> Vec<i64> {
+    // Consumes the iterator, returns an (Optional) String
+    let mut numbers = Vec::new();
+    for line in lines {
+        if let Ok(ip) = line {
+            let i = ip.parse::<i64>().unwrap();
+            numbers.push(i);
+        }
+    }
+
+    numbers
+}
+
+fn read_strings(lines: io::Lines<io::BufReader<File>>) -> Vec<String> {
     // Consumes the iterator, returns an (Optional) String
     let mut strings = Vec::new();
     for line in lines {
@@ -38,7 +67,7 @@ pub fn read_strings(lines: io::Lines<io::BufReader<File>>) -> Vec<String> {
 // Based on https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
 // The output is wrapped in a Result to allow matching on errors
 // Returns an Iterator to the Reader of the lines of the file.
-pub fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
     P: AsRef<Path>,
 {

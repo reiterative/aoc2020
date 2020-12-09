@@ -1,22 +1,117 @@
 mod utils;
 use lazy_static::lazy_static;
 
-use crate::utils::{read_lines, read_numbers, read_strings, get_strings};
+use crate::utils::{get_signed, get_strings, get_unsigned};
 use itertools::Itertools;
 use regex::Regex;
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let strings = get_strings("./data/input9");
-    day_9_1(&strings);
+    let numbers = get_unsigned("./data/input9");
+    let invalid = day9_1(25, &numbers);
+    println!("Invalid number: {}", invalid);
+    let target = day9_2(invalid, &numbers);
+    println!("Encryptrion weakness: {}", target);
 }
 
-fn day_9_1(strings: &Vec<String>) -> u64 {
-    let num: u64 = 0;
-    num
+#[cfg(test)]
+mod test9 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test9";
+
+    #[test]
+    fn test9_1() {
+        assert_eq!(day9_1(5, &get_unsigned(TEST_FILE)), 127);
+    }
+
+    #[test]
+    fn test9_2() {
+        assert_eq!(day9_2(127, &get_unsigned(TEST_FILE)), 62);
+    }
 }
 
+fn day9_1(preamble: u16, numbers: &Vec<u64>) -> u64 {
+    let mut buffer: Vec<u64> = Vec::new();
+    let mut counter = 0;
+    for n in numbers {
+        if counter < preamble {
+            counter = counter + 1;
+            buffer.push(*n);
+        } else {
+            if !checksum(*n, &buffer) {
+                return *n;
+            }
+            buffer.remove(0);
+            buffer.push(*n);
+        }
+    }
+    panic!("Not found")
+}
+
+fn day9_2(invalid: u64, numbers: &Vec<u64>) -> u64 {
+    let mut searching = true;
+    let mut bottom = 0;
+    let mut top = 1;
+    while bottom < numbers.len() {
+        let range = numbers.get(bottom..top);
+        let sum = sum_range(range);
+        if sum == invalid {
+            return min_range(range) + max_range(range);
+        } else if sum > invalid {
+            bottom = bottom + 1;
+            top = bottom + 1;
+        } else {
+            top = top + 1;
+        }
+    }
+    panic!("Encryption weakness not found!")
+}
+
+fn max_range(range: Option<&[u64]>) -> u64 {
+    if range.is_some() {
+        match range.unwrap().iter().max() {
+            Some(max) => return *max,
+            None => panic!("Range for max_range() is empty"),
+        }
+    }
+    panic!("Range for max_range() is invalid")
+}
+
+fn min_range(range: Option<&[u64]>) -> u64 {
+    let mut min: u64 = 0;
+    if range.is_some() {
+        match range.unwrap().iter().min() {
+            Some(min) => return *min,
+            None => panic!("Range for min_range() is empty"),
+        }
+    }
+    panic!("Range for min_range() is invalid")
+}
+
+fn sum_range(range: Option<&[u64]>) -> u64 {
+    let mut sum = 0;
+    if range.is_some() {
+        for i in range.unwrap().iter() {
+            sum = sum + i;
+        }
+    }
+    sum
+}
+
+fn checksum(target: u64, buffer: &Vec<u64>) -> bool {
+    for a in buffer {
+        for b in buffer {
+            if a != b {
+                //println!("Test: {}+{}=={}", a, b, target);
+                if a + b == target {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
 
 #[cfg(test)]
 mod test8 {
@@ -25,14 +120,12 @@ mod test8 {
 
     #[test]
     fn test8_1() {
-        let acc = day8_1(&get_strings(TEST_FILE));
-        assert_eq!(acc, 5);
+        assert_eq!(day8_1(&get_strings(TEST_FILE)), 5);
     }
 
     #[test]
     fn test8_2() {
-        let acc = day8_2(&get_strings(TEST_FILE));
-        assert_eq!(acc, 8);
+        assert_eq!(day8_2(&get_strings(TEST_FILE)), 8);
     }
 }
 
@@ -206,26 +299,12 @@ mod test7 {
 
     #[test]
     fn test7_1() {
-        let total;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            total = day7_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(total, 4);
+        assert_eq!(day7_1(&get_strings(TEST_FILE)), 4);
     }
 
     #[test]
     fn test7_2() {
-        let total;
-        if let Ok(lines) = read_lines(TEST_FILE_2) {
-            let strings = read_strings(lines);
-            total = day7_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE_2)
-        }
-        assert_eq!(total, 126);
+        assert_eq!(day7_2(&get_strings(TEST_FILE_2)), 126);
     }
 }
 
@@ -337,26 +416,12 @@ mod test6 {
 
     #[test]
     fn test6_1() {
-        let sum;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            sum = day6_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(sum, 11);
+        assert_eq!(day6_1(&get_strings(TEST_FILE)), 11);
     }
 
     #[test]
     fn test6_2() {
-        let sum;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            sum = day6_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(sum, 6);
+        assert_eq!(day6_2(&get_strings(TEST_FILE)), 6);
     }
 }
 
@@ -440,18 +505,10 @@ fn day6_2(strings: &Vec<String>) -> u32 {
 mod test5 {
     use super::*;
     static TEST_FILE: &str = "./test/test5";
-    static TEST_CHECK: &str = "./test/test4_check";
 
     #[test]
     fn test5_1() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day5_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 820);
+        assert_eq!(day5_1(&get_strings(TEST_FILE)), 820);
     }
 }
 
@@ -519,38 +576,17 @@ mod test4 {
 
     #[test]
     fn test4_1() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day4_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 2);
+        assert_eq!(day4_1(&get_strings(TEST_FILE)), 2);
     }
 
     #[test]
     fn test4_2_invalid() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE_INVALID) {
-            let strings = read_strings(lines);
-            valid = day4_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE_INVALID)
-        }
-        assert_eq!(valid, 0);
+        assert_eq!(day4_2(&get_strings(TEST_FILE_INVALID)), 0);
     }
 
     #[test]
     fn test4_2_valid() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE_VALID) {
-            let strings = read_strings(lines);
-            valid = day4_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE_VALID)
-        }
-        assert_eq!(valid, 3);
+        assert_eq!(day4_2(&get_strings(TEST_FILE_VALID)), 3);
     }
 }
 
@@ -770,26 +806,12 @@ mod test3 {
 
     #[test]
     fn test3_1() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day3_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 7);
+        assert_eq!(day3_1(&get_strings(TEST_FILE)), 7);
     }
 
     #[test]
     fn test3_2() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day3_2(&strings, &day3_rules());
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 336);
+        assert_eq!(day3_2(&get_strings(TEST_FILE), &day3_rules()), 336);
     }
 }
 
@@ -865,26 +887,12 @@ mod test2 {
 
     #[test]
     fn test2_1() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day2_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 2);
+        assert_eq!(day2_1(&get_strings(TEST_FILE)), 2);
     }
 
     #[test]
     fn test2_2() {
-        let valid;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            valid = day2_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
-        assert_eq!(valid, 1);
+        assert_eq!(day2_2(&get_strings(TEST_FILE)), 1);
     }
 }
 
@@ -943,26 +951,16 @@ mod test1 {
 
     #[test]
     fn test1_1() {
-        let mut valid = 0;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let numbers = read_numbers(lines);
-            valid = day1_1(numbers);
-        }
-        assert_eq!(valid, 514579);
+        assert_eq!(day1_1(get_signed(TEST_FILE)), 514579);
     }
 
     #[test]
     fn test1_2() {
-        let mut valid = 0;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let numbers = read_numbers(lines);
-            valid = day1_2(numbers);
-        }
-        assert_eq!(valid, 241861950);
+        assert_eq!(day1_2(get_signed(TEST_FILE)), 241861950);
     }
 }
 
-fn day1_1(numbers: Vec<i32>) -> u64 {
+fn day1_1(numbers: Vec<i64>) -> u64 {
     let mut a: u64 = 0;
     for x in numbers.iter() {
         for y in numbers.iter() {
@@ -976,7 +974,7 @@ fn day1_1(numbers: Vec<i32>) -> u64 {
     a
 }
 
-fn day1_2(numbers: Vec<i32>) -> u64 {
+fn day1_2(numbers: Vec<i64>) -> u64 {
     let mut a: u64 = 0;
     for x in numbers.iter() {
         for y in numbers.iter() {
