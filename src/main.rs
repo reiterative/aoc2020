@@ -1,24 +1,22 @@
 mod utils;
 use lazy_static::lazy_static;
 
-use crate::utils::{read_lines, read_numbers, read_strings};
+use crate::utils::{read_lines, read_numbers, read_strings, get_strings};
 use itertools::Itertools;
 use regex::Regex;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    if let Ok(lines) = read_lines("./data/input8") {
-        //if let Ok(lines) = read_lines("./test/test7_2") {
-        let strings = read_strings(lines);
-        let acc = day8_1(&strings);
-        println!("Accumulator contains: {}", acc);
-        let acc = day8_2(&strings);
-        println!("Accumulator contains: {}", acc);
-    } else {
-        panic!("Input file missing!")
-    }
+    let strings = get_strings("./data/input9");
+    day_9_1(&strings);
 }
+
+fn day_9_1(strings: &Vec<String>) -> u64 {
+    let num: u64 = 0;
+    num
+}
+
 
 #[cfg(test)]
 mod test8 {
@@ -27,25 +25,13 @@ mod test8 {
 
     #[test]
     fn test8_1() {
-        let acc;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            acc = day8_1(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
+        let acc = day8_1(&get_strings(TEST_FILE));
         assert_eq!(acc, 5);
     }
 
     #[test]
     fn test8_2() {
-        let acc;
-        if let Ok(lines) = read_lines(TEST_FILE) {
-            let strings = read_strings(lines);
-            acc = day8_2(&strings);
-        } else {
-            panic!("Missing test file: {}", TEST_FILE)
-        }
+        let acc = day8_2(&get_strings(TEST_FILE));
         assert_eq!(acc, 8);
     }
 }

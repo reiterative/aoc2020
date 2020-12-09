@@ -2,6 +2,14 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+pub fn get_strings(filename: &str) -> Vec<String> {
+    if let Ok(lines) = read_lines(filename) {
+        read_strings(lines)
+    } else {
+        panic!("Could not open file: {}", filename)
+    }
+}
+
 pub fn read_numbers(lines: io::Lines<io::BufReader<File>>) -> Vec<i32> {
     // Consumes the iterator, returns an (Optional) String
     let mut numbers = Vec::new();
