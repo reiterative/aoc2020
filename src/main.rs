@@ -8,11 +8,69 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let numbers = get_unsigned("./data/input9");
-    let invalid = day9_1(25, &numbers);
-    println!("Invalid number: {}", invalid);
-    let target = day9_2(invalid, &numbers);
-    println!("Encryptrion weakness: {}", target);
+    let numbers = get_unsigned("./data/input10");
+    //let numbers = get_unsigned("./test/test10");
+    let result = day10_1(&numbers);
+    println!("Result: {}", result);
+}
+
+#[cfg(test)]
+mod test10 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test10_1";
+    static TEST_FILE_2: &str = "./test/test10_2";
+
+    #[test]
+    fn test10_1() {
+        assert_eq!(day10_1(&get_unsigned(TEST_FILE_2)), 220);
+    }
+
+    #[test]
+    fn test10_2_1() {
+        assert_eq!(day10_2(&get_unsigned(TEST_FILE)), 8);
+    }
+
+    #[test]
+    fn test10_2_2() {
+        assert_eq!(day10_2(&get_unsigned(TEST_FILE_2)), 19208);
+    }
+}
+
+fn day10_1(numbers: &Vec<u64>) -> u64 {
+    let mut adaptors = numbers.clone();
+    adaptors.sort();
+    let mut count1 = 0;
+    let mut count3 = 1; // Last diff is always 3
+    let mut prev: u64 = 0;
+    for a in adaptors {
+        let diff = a - prev;
+        match diff {
+            1 => count1 = count1 + 1,
+            3 => count3 = count3 + 1,
+            _ => println!("Diff = {}", diff),
+        }
+        prev = a;
+    }
+    println!(
+        "There are {} 1-jolt and {} 3-jolt differences",
+        count1, count3
+    );
+    count3 * count1
+}
+
+fn day10_2(numbers: &Vec<u64>) -> u64 {
+    let mut adaptors = numbers.clone();
+    adaptors.sort();
+    if let Some(mut high) = adaptors.last() {
+        adaptors.push(*high + 3);
+        let mut prev = 0;
+        for a in adaptors {
+            let mut combos = 0;
+            let mut start = 0;
+            }
+    }
+
+    0
 }
 
 #[cfg(test)]
