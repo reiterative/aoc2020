@@ -62,6 +62,7 @@ fn day10_1(numbers: &Vec<u64>) -> u64 {
 
 const TWO: u32 = 2;
 fn day10_2(numbers: &Vec<u64>) -> u64 {
+    let trib = trib(8);
     let mut adaptors = numbers.clone();
     adaptors.sort();
     if let Some(mut high) = adaptors.last() {
@@ -71,19 +72,50 @@ fn day10_2(numbers: &Vec<u64>) -> u64 {
         let mut routes: Vec<u32> = Vec::new();
         let mut b = 0;
         for a in adaptors {
-            let mut combos: u32 = 0;
-            let mut check = a - b;
-            while check > 0 && check < 4 {
-                combos = TWO.pow(combos);
-                b = test.remove(0);
-                check = a - b;
+            println!("a={}", a);
+            if a > b {
+                let mut seq: usize = 0;
+                let mut check = a - b;
+                while check == 1 {
+                    seq = seq + 1;
+                    b = test.remove(0);
+                    check = a - b;
+                    println!("Checking: a={} b={} seq={}", a, b, seq);
+                }
+                if check == 3 || check == 0 {
+                    if seq > 0 {
+                        if let Some(r) = trib.get(seq) {
+                            routes.push(*r);
+                            println!("Pushing: a={} b={} seq={} r={}", a, b, seq, r);
+                        } else {
+                            panic!("Could not obtain trib({})", seq);
+                        }
+                    }
+                } else {
+                    panic!("Unexpected difference! a={} b={} check={}", a, b, check);
+                }
             }
-            println!("a={} b={} combos={}", a, b, combos);
-            routes.push(combos);
         }
     }
 
     0
+}
+
+fn trib(max: u32) -> Vec<u32> {
+    let mut seq: Vec<u32> = Vec::new();
+    for t in 0..max {
+        let mut value: u32 = 0;
+        for i in 1..3 {
+            if seq.len() > i {
+                let index: usize = seq.len() - 1 - i;
+                if let Some(x) = seq.get(index as usize) {
+                    value = value + *x as u32;
+                }
+            }
+        }
+        seq.push(value);
+    }
+    seq
 }
 
 #[cfg(test)]
