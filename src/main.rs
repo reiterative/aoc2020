@@ -8,16 +8,18 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let numbers = get_unsigned("./data/input10");
-    //let numbers = get_unsigned("./test/test10");
+    //let numbers = get_unsigned("./data/input10");
+    let numbers = get_unsigned("./test/test10");
     let result = day10_1(&numbers);
     println!("Result: {}", result);
+    let combos = day10_2(&numbers);
+    println!("Combos: {}", combos);
 }
 
 #[cfg(test)]
 mod test10 {
     use super::*;
-    static TEST_FILE: &str = "./test/test10_1";
+    static TEST_FILE: &str = "./test/test10";
     static TEST_FILE_2: &str = "./test/test10_2";
 
     #[test]
@@ -58,16 +60,27 @@ fn day10_1(numbers: &Vec<u64>) -> u64 {
     count3 * count1
 }
 
+const TWO: u32 = 2;
 fn day10_2(numbers: &Vec<u64>) -> u64 {
     let mut adaptors = numbers.clone();
     adaptors.sort();
     if let Some(mut high) = adaptors.last() {
         adaptors.push(*high + 3);
         let mut prev = 0;
+        let mut test = adaptors.clone();
+        let mut routes: Vec<u32> = Vec::new();
+        let mut b = 0;
         for a in adaptors {
-            let mut combos = 0;
-            let mut start = 0;
+            let mut combos: u32 = 0;
+            let mut check = a - b;
+            while check > 0 && check < 4 {
+                combos = TWO.pow(combos);
+                b = test.remove(0);
+                check = a - b;
             }
+            println!("a={} b={} combos={}", a, b, combos);
+            routes.push(combos);
+        }
     }
 
     0
