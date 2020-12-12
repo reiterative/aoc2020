@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 
 fn main() {
     //let numbers = get_unsigned("./data/input10");
-    let numbers = get_unsigned("./test/test10");
+    let numbers = get_unsigned("./test/test10_2");
     let result = day10_1(&numbers);
     println!("Result: {}", result);
     let combos = day10_2(&numbers);
@@ -60,57 +60,42 @@ fn day10_1(numbers: &Vec<u64>) -> u64 {
     count3 * count1
 }
 
-const TWO: u32 = 2;
 fn day10_2(numbers: &Vec<u64>) -> u64 {
-    let trib = trib(8);
+    let trib = trib(32);
     let mut adaptors = numbers.clone();
     adaptors.sort();
-    if let Some(mut high) = adaptors.last() {
+    if let Some(high) = adaptors.last() {
         adaptors.push(*high + 3);
-        let mut prev = 0;
-        let mut test = adaptors.clone();
-        let mut routes: Vec<u32> = Vec::new();
-        let mut b = 0;
-        for a in adaptors {
-            println!("a={}", a);
-            if a > b {
-                let mut seq: usize = 0;
-                let mut check = a - b;
-                while check == 1 {
-                    seq = seq + 1;
-                    b = test.remove(0);
-                    check = a - b;
-                    println!("Checking: a={} b={} seq={}", a, b, seq);
-                }
-                if check == 3 || check == 0 {
-                    if seq > 0 {
-                        if let Some(r) = trib.get(seq) {
-                            routes.push(*r);
-                            println!("Pushing: a={} b={} seq={} r={}", a, b, seq, r);
-                        } else {
-                            panic!("Could not obtain trib({})", seq);
-                        }
-                    }
-                } else {
-                    panic!("Unexpected difference! a={} b={} check={}", a, b, check);
-                }
-            }
+    } else {
+        panic!("Could not get last adaptor!")
+    }
+    let mut routes: u64 = 1;
+    let mut b = 0;
+    let mut seq = 0;
+    for a in adaptors {
+        match a-b {
+            1 => seq = seq + 1,
+            3 => routes = routes * *trib.get(seq).unwrap() as u64,
+            _ => panic!("Difference of {}!",a-b)
         }
+        b = a;
     }
 
-    0
+    routes
 }
 
 fn trib(max: u32) -> Vec<u32> {
     let mut seq: Vec<u32> = Vec::new();
-    for t in 0..max {
+    seq.push(1);
+    for _t in 0..max {
         let mut value: u32 = 0;
-        for i in 1..3 {
-            if seq.len() > i {
-                let index: usize = seq.len() - 1 - i;
-                if let Some(x) = seq.get(index as usize) {
-                    value = value + *x as u32;
-                }
+        let mut first:i64 = seq.len() as i64 - 3;
+        if first < 0 {
+            first = 0;
+        }
+        if let Some(prev) = seq.get(first as usize..) {
+            for x in prev {
+                value = value + *x as u32;
             }
         }
         seq.push(value);
