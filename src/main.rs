@@ -8,8 +8,8 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    //let strings = get_strings("./data/input11");
-    let strings = get_strings("./test/test11");
+    let strings = get_strings("./data/input11");
+    //let strings = get_strings("./test/test11");
     let result = day11_1(&strings);
     println!("Result: {}", result);
 }
@@ -25,33 +25,6 @@ mod test11 {
     #[test]
     fn test11_1() {
         assert_eq!(day11_1(&get_strings(TEST_FILE)), 37);
-    }
-
-    #[test]
-    fn test11_1_R1() {
-        let mut map = SeatMap::new(&get_strings(TEST_FILE_R1));
-        let testmap = SeatMap::new(&get_strings(TEST_FILE));
-        map.seat_passengers();
-        assert_eq!(map, testmap);
-    }
-
-    #[test]
-    fn test11_1_R2() {
-        let mut map = SeatMap::new(&get_strings(TEST_FILE_R2));
-        let testmap = SeatMap::new(&get_strings(TEST_FILE));
-        map.seat_passengers();
-        map.seat_passengers();
-        assert_eq!(map, testmap);
-    }
-
-    #[test]
-    fn test11_1_R3() {
-        let mut map = SeatMap::new(&get_strings(TEST_FILE_R3));
-        let testmap = SeatMap::new(&get_strings(TEST_FILE));
-        map.seat_passengers();
-        map.seat_passengers();
-        map.seat_passengers();
-        assert_eq!(map, testmap);
     }
 }
 
@@ -75,7 +48,11 @@ impl SeatMap {
             }
             row = row + 1;
         }
-        SeatMap {seats, rows: row, cols: col}
+        SeatMap {
+            seats,
+            rows: row,
+            cols: col,
+        }
     }
 
     fn count_occupied(&self) -> u64 {
@@ -90,60 +67,78 @@ impl SeatMap {
 
     fn seat_passengers(&mut self) -> bool {
         let mut new_seats: HashMap<(u8, u8), char> = HashMap::new();
-        for ((row, col), seat) in &self.seats {
-            let mut new_seat = *seat;
-            if *seat == 'L' {
-                if self.check_seats(row, col) == 0 {
-                    new_seat = '#';
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                let seat = self.seats.get(&(row, col)).unwrap();
+                let mut new_seat = *seat;
+                if *seat == 'L' {
+                    if self.check_seats(row, col) == 0 {
+                        new_seat = '#';
+                    }
+                } else if *seat == '#' {
+                    if self.check_seats(row, col) >= 4 {
+                        new_seat = 'L';
+                    }
                 }
-            } else if *seat == '#' {
-                if self.check_seats(row, col) >= 4 {
-                    new_seat = 'L';
-                }
+                new_seats.insert((row, col), new_seat);
             }
-            new_seats.insert((*row, *col), new_seat);
         }
         let stable = new_seats == self.seats;
-        self. seats = new_seats;
+        self.seats = new_seats;
         stable
     }
 
     const COORDS: [(i16, i16); 8] = [
         (-1, 0),
         (-1, 1),
-        (0, 1),
-        (1, 1),
-        (1, 0),
-        (1, -1),
-        (0, -1),
         (-1, -1),
+        (0, 1),
+        (0, -1),
+        (1, 0),
+        (1, 1),
+        (1, -1),
     ];
 
-    fn check_seats(&self, row: &u8, col: &u8) -> u8 {
+    fn check_seats(&self, row: u8, col: u8) -> u8 {
         let mut count = 0;
+        //println!("Checking seat {},{}", row, col);
         for (r, c) in SeatMap::COORDS.iter() {
-            if *row as i16 + r > 0 && *col as i16 + c > 0 {
-                if let Some(seat) = self.seats.get(&((*row as i16 + r) as u8, (*col as i16 + c) as u8)) {
+            if row as i16 + r >= 0 && col as i16 + c >= 0 {
+                let rtest = (row as i16 + r) as u8;
+                let ctest = (col as i16 + c) as u8;
+                if let Some(seat) = self.seats.get(&(rtest, ctest)) {
+                    //println!("  - {},{}: {}", rtest, ctest, *seat);
                     if *seat == '#' {
                         count = count + 1;
                     }
+                } else {
+                    //println!("  - {},{}: Not Found", rtest, ctest);
                 }
             }
         }
+        //println!("({},{}) : {}", row, col, count);
         count
     }
 
-    fn print_seats() {
-
+    fn print(&self) {
+        for row in 0..self.rows {
+            let mut line = String::new();
+            for col in 0..self.cols {
+                let seat = self.seats.get(&(row, col));
+                line.push(*seat.unwrap());
+            }
+            //println!("{}", line);
+        }
+        //println!("++++ Ends ++++");
     }
 }
-
 
 fn day11_1(strings: &Vec<String>) -> u64 {
     let mut map = SeatMap::new(strings);
     let mut stable = false;
     while (stable == false) {
         stable = map.seat_passengers();
+        map.print();
     }
     map.count_occupied()
 }
