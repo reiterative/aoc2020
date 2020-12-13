@@ -8,8 +8,8 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    //let numbers = get_unsigned("./data/input10");
-    let numbers = get_unsigned("./test/test10_2");
+    let numbers = get_unsigned("./data/input10");
+    //let numbers = get_unsigned("./test/test10_2");
     let result = day10_1(&numbers);
     println!("Result: {}", result);
     let combos = day10_2(&numbers);
@@ -73,10 +73,13 @@ fn day10_2(numbers: &Vec<u64>) -> u64 {
     let mut b = 0;
     let mut seq = 0;
     for a in adaptors {
-        match a-b {
-            1 => seq = seq + 1,
-            3 => routes = routes * *trib.get(seq).unwrap() as u64,
-            _ => panic!("Difference of {}!",a-b)
+        if a - b == 1 {
+            seq = seq + 1;
+        } else if a - b == 3 {
+            routes = routes * *trib.get(seq).unwrap() as u64;
+            seq = 0;
+        } else {
+            panic!("Difference of {}!", a - b);
         }
         b = a;
     }
@@ -89,7 +92,7 @@ fn trib(max: u32) -> Vec<u32> {
     seq.push(1);
     for _t in 0..max {
         let mut value: u32 = 0;
-        let mut first:i64 = seq.len() as i64 - 3;
+        let mut first: i64 = seq.len() as i64 - 3;
         if first < 0 {
             first = 0;
         }
