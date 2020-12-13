@@ -107,17 +107,17 @@ fn trib(max: u32) -> Vec<u32> {
 }
 
 #[cfg(test)]
-mod test9 {
+mod test09 {
     use super::*;
     static TEST_FILE: &str = "./test/test9";
 
     #[test]
-    fn test9_1() {
+    fn test09_1() {
         assert_eq!(day9_1(5, &get_unsigned(TEST_FILE)), 127);
     }
 
     #[test]
-    fn test9_2() {
+    fn test09_2() {
         assert_eq!(day9_2(127, &get_unsigned(TEST_FILE)), 62);
     }
 }
@@ -205,17 +205,17 @@ fn checksum(target: u64, buffer: &Vec<u64>) -> bool {
 }
 
 #[cfg(test)]
-mod test8 {
+mod test08 {
     use super::*;
     static TEST_FILE: &str = "./test/test8";
 
     #[test]
-    fn test8_1() {
+    fn test08_1() {
         assert_eq!(day8_1(&get_strings(TEST_FILE)), 5);
     }
 
     #[test]
-    fn test8_2() {
+    fn test08_2() {
         assert_eq!(day8_2(&get_strings(TEST_FILE)), 8);
     }
 }
@@ -383,18 +383,18 @@ fn day8_2(strings: &Vec<String>) -> i64 {
 }
 
 #[cfg(test)]
-mod test7 {
+mod test07 {
     use super::*;
     static TEST_FILE: &str = "./test/test7";
     static TEST_FILE_2: &str = "./test/test7_2";
 
     #[test]
-    fn test7_1() {
+    fn test07_1() {
         assert_eq!(day7_1(&get_strings(TEST_FILE)), 4);
     }
 
     #[test]
-    fn test7_2() {
+    fn test07_2() {
         assert_eq!(day7_2(&get_strings(TEST_FILE_2)), 126);
     }
 }
@@ -501,17 +501,17 @@ fn day7_1(strings: &Vec<String>) -> u32 {
 }
 // ===================================================================================
 #[cfg(test)]
-mod test6 {
+mod test06 {
     use super::*;
     static TEST_FILE: &str = "./test/test6";
 
     #[test]
-    fn test6_1() {
+    fn test06_1() {
         assert_eq!(day6_1(&get_strings(TEST_FILE)), 11);
     }
 
     #[test]
-    fn test6_2() {
+    fn test06_2() {
         assert_eq!(day6_2(&get_strings(TEST_FILE)), 6);
     }
 }
@@ -593,12 +593,12 @@ fn day6_2(strings: &Vec<String>) -> u32 {
 }
 
 #[cfg(test)]
-mod test5 {
+mod test05 {
     use super::*;
     static TEST_FILE: &str = "./test/test5";
 
     #[test]
-    fn test5_1() {
+    fn test05_1() {
         assert_eq!(day5_1(&get_strings(TEST_FILE)), 820);
     }
 }
@@ -659,24 +659,24 @@ fn upper(range: (u16, u16, u16)) -> (u16, u16, u16) {
 }
 
 #[cfg(test)]
-mod test4 {
+mod test04 {
     use super::*;
     static TEST_FILE: &str = "./test/test4";
     static TEST_FILE_INVALID: &str = "./test/test4_invalid";
     static TEST_FILE_VALID: &str = "./test/test4_valid";
 
     #[test]
-    fn test4_1() {
+    fn test04_1() {
         assert_eq!(day4_1(&get_strings(TEST_FILE)), 2);
     }
 
     #[test]
-    fn test4_2_invalid() {
+    fn test04_2_invalid() {
         assert_eq!(day4_2(&get_strings(TEST_FILE_INVALID)), 0);
     }
 
     #[test]
-    fn test4_2_valid() {
+    fn test04_2_valid() {
         assert_eq!(day4_2(&get_strings(TEST_FILE_VALID)), 3);
     }
 }
@@ -891,17 +891,17 @@ fn day4_2(strings: &Vec<String>) -> u32 {
 }
 
 #[cfg(test)]
-mod test3 {
+mod test03 {
     use super::*;
     static TEST_FILE: &str = "./test/test3";
 
     #[test]
-    fn test3_1() {
+    fn test03_1() {
         assert_eq!(day3_1(&get_strings(TEST_FILE)), 7);
     }
 
     #[test]
-    fn test3_2() {
+    fn test03_2() {
         assert_eq!(day3_2(&get_strings(TEST_FILE), &day3_rules()), 336);
     }
 }
@@ -972,17 +972,17 @@ fn check_for_trees(xpos: &i32, map: &str) -> bool {
 }
 
 #[cfg(test)]
-mod test2 {
+mod test02 {
     use super::*;
     static TEST_FILE: &str = "./test/test2";
 
     #[test]
-    fn test2_1() {
+    fn test02_1() {
         assert_eq!(day2_1(&get_strings(TEST_FILE)), 2);
     }
 
     #[test]
-    fn test2_2() {
+    fn test02_2() {
         assert_eq!(day2_2(&get_strings(TEST_FILE)), 1);
     }
 }
@@ -1036,17 +1036,17 @@ fn day2_2(strings: &Vec<String>) -> u32 {
 }
 
 #[cfg(test)]
-mod test1 {
+mod test01 {
     use super::*;
     static TEST_FILE: &str = "./test/test1";
 
     #[test]
-    fn test1_1() {
+    fn test01_1() {
         assert_eq!(day1_1(get_signed(TEST_FILE)), 514579);
     }
 
     #[test]
-    fn test1_2() {
+    fn test01_2() {
         assert_eq!(day1_2(get_signed(TEST_FILE)), 241861950);
     }
 }
