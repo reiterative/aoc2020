@@ -29,76 +29,86 @@ mod test11 {
 
     #[test]
     fn test11_1_R1() {
-        let test_seats = get_seat_map(&get_strings(TEST_FILE_R1));
-        let seats = get_seat_map(&get_strings(TEST_FILE));
-        let new_seats = seat_passengers(&seats);
-        assert_eq!(new_seats, test_seats);
+        let mut map = SeatMap::new(&get_strings(TEST_FILE_R1));
+        let testmap = SeatMap::new(&get_strings(TEST_FILE));
+        map.seat_passengers();
+        assert_eq!(map, testmap);
     }
 
     #[test]
     fn test11_1_R2() {
-        let test_seats = get_seat_map(&get_strings(TEST_FILE_R2));
-        let seats = get_seat_map(&get_strings(TEST_FILE));
-        let mut new_seats = seat_passengers(&seats);
-        new_seats = seat_passengers(&seats);
-        assert_eq!(new_seats, test_seats);
+        let mut map = SeatMap::new(&get_strings(TEST_FILE_R2));
+        let testmap = SeatMap::new(&get_strings(TEST_FILE));
+        map.seat_passengers();
+        map.seat_passengers();
+        assert_eq!(map, testmap);
     }
 
     #[test]
     fn test11_1_R3() {
-        let test_seats = get_seat_map(&get_strings(TEST_FILE_R3));
-        let seats = get_seat_map(&get_strings(TEST_FILE));
-        let mut new_seats = seat_passengers(&seats);
-        new_seats = seat_passengers(&seats);
-        new_seats = seat_passengers(&seats);
-        assert_eq!(new_seats, test_seats);
+        let mut map = SeatMap::new(&get_strings(TEST_FILE_R3));
+        let testmap = SeatMap::new(&get_strings(TEST_FILE));
+        map.seat_passengers();
+        map.seat_passengers();
+        map.seat_passengers();
+        assert_eq!(map, testmap);
     }
 }
-fn day11_1(strings: &Vec<String>) -> u64 {
-    let mut seats = get_seat_map(strings);
-    let mut seating = true;
-    while (seating) {
-        let new_seats = seat_passengers(&seats);
-        if seats == new_seats {
-            seating = false;
-        }
-        seats = new_seats;
-    }
 
-    count_occupied_seats(&seats)
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct SeatMap {
+    seats: HashMap<(u8, u8), char>,
+    rows: u8,
+    cols: u8,
 }
 
-fn count_occupied_seats(seats: &HashMap<(u8, u8), char>) -> u64 {
-    let mut count = 0;
-    for ((_row, _col), seat) in seats {
-        if *seat == '#' {
-            count = count + 1;
-        }
-    }
-    count
-}
-
-fn seat_passengers(seats: &HashMap<(u8, u8), char>) -> HashMap<(u8, u8), char> {
-    let mut new_seats: HashMap<(u8, u8), char> = HashMap::new();
-    for ((row, col), seat) in seats {
-        let mut new_seat = *seat;
-        if *seat == 'L' {
-            if check_seats(seats, row, col) == 0 {
-                new_seat = '#';
+impl SeatMap {
+    fn new(strings: &Vec<String>) -> SeatMap {
+        let mut seats: HashMap<(u8, u8), char> = HashMap::new();
+        let mut row = 0;
+        let mut col = 0;
+        for line in strings {
+            col = 0;
+            for seat in line.chars() {
+                seats.insert((row, col), seat);
+                col = col + 1;
             }
-        } else if *seat == '#' {
-            if check_seats(seats, row, col) > 4 {
-                new_seat = 'L';
+            row = row + 1;
+        }
+        SeatMap {seats, rows: row, cols: col}
+    }
+
+    fn count_occupied(&self) -> u64 {
+        let mut count = 0;
+        for ((_row, _col), seat) in &self.seats {
+            if *seat == '#' {
+                count = count + 1;
             }
         }
-        new_seats.insert((*row, *col), new_seat);
+        count
     }
-    new_seats
-}
 
-fn check_seats(seats: &HashMap<(u8, u8), char>, row: &u8, col: &u8) -> u8 {
-    let mut count = 0;
-    let coords: [(i16, i16); 8] = [
+    fn seat_passengers(&mut self) -> bool {
+        let mut new_seats: HashMap<(u8, u8), char> = HashMap::new();
+        for ((row, col), seat) in &self.seats {
+            let mut new_seat = *seat;
+            if *seat == 'L' {
+                if self.check_seats(row, col) == 0 {
+                    new_seat = '#';
+                }
+            } else if *seat == '#' {
+                if self.check_seats(row, col) >= 4 {
+                    new_seat = 'L';
+                }
+            }
+            new_seats.insert((*row, *col), new_seat);
+        }
+        let stable = new_seats == self.seats;
+        self. seats = new_seats;
+        stable
+    }
+
+    const COORDS: [(i16, i16); 8] = [
         (-1, 0),
         (-1, 1),
         (0, 1),
@@ -108,30 +118,34 @@ fn check_seats(seats: &HashMap<(u8, u8), char>, row: &u8, col: &u8) -> u8 {
         (0, -1),
         (-1, -1),
     ];
-    for (r, c) in coords.iter() {
-        if *row as i16 + r > 0 && *col as i16 + c > 0 {
-            if let Some(seat) = seats.get(&((*row as i16 + r) as u8, (*col as i16 + c) as u8)) {
-                if *seat == '#' {
-                    count = count + 1;
+
+    fn check_seats(&self, row: &u8, col: &u8) -> u8 {
+        let mut count = 0;
+        for (r, c) in SeatMap::COORDS.iter() {
+            if *row as i16 + r > 0 && *col as i16 + c > 0 {
+                if let Some(seat) = self.seats.get(&((*row as i16 + r) as u8, (*col as i16 + c) as u8)) {
+                    if *seat == '#' {
+                        count = count + 1;
+                    }
                 }
             }
         }
+        count
     }
-    count
+
+    fn print_seats() {
+
+    }
 }
 
-fn get_seat_map(strings: &Vec<String>) -> HashMap<(u8, u8), char> {
-    let mut seats: HashMap<(u8, u8), char> = HashMap::new();
-    let mut row = 0;
-    for line in strings {
-        let mut col = 0;
-        for seat in line.chars() {
-            seats.insert((row, col), seat);
-            col = col + 1;
-        }
-        row = row + 1;
+
+fn day11_1(strings: &Vec<String>) -> u64 {
+    let mut map = SeatMap::new(strings);
+    let mut stable = false;
+    while (stable == false) {
+        stable = map.seat_passengers();
     }
-    seats
+    map.count_occupied()
 }
 
 #[cfg(test)]
