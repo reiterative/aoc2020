@@ -12,6 +12,8 @@ fn main() {
     //let strings = get_strings("./test/test11");
     let result = day11_1(&strings);
     println!("Result: {}", result);
+    let result = day11_2(&strings);
+    println!("Result: {}", result);
 }
 
 #[cfg(test)]
@@ -26,6 +28,11 @@ mod test11 {
     fn test11_1() {
         assert_eq!(day11_1(&get_strings(TEST_FILE)), 37);
     }
+
+    #[test]
+    fn test11_2() {
+        assert_eq!(day11_2(&get_strings(TEST_FILE)), 26);
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,6 +40,9 @@ struct SeatMap {
     seats: HashMap<(u8, u8), char>,
     rows: u8,
     cols: u8,
+    ranged: bool,
+    max_occup: u8,
+    max_iter: u16,
 }
 
 impl SeatMap {
@@ -52,6 +62,9 @@ impl SeatMap {
             seats,
             rows: row,
             cols: col,
+            ranged: false,
+            max_occup: 4,
+            max_iter: 999,
         }
     }
 
@@ -76,7 +89,7 @@ impl SeatMap {
                         new_seat = '#';
                     }
                 } else if *seat == '#' {
-                    if self.check_seats(row, col) >= 4 {
+                    if self.check_seats(row, col) >= self.max_occup {
                         new_seat = 'L';
                     }
                 }
@@ -103,16 +116,31 @@ impl SeatMap {
         let mut count = 0;
         //println!("Checking seat {},{}", row, col);
         for (r, c) in SeatMap::COORDS.iter() {
-            if row as i16 + r >= 0 && col as i16 + c >= 0 {
-                let rtest = (row as i16 + r) as u8;
-                let ctest = (col as i16 + c) as u8;
-                if let Some(seat) = self.seats.get(&(rtest, ctest)) {
-                    //println!("  - {},{}: {}", rtest, ctest, *seat);
-                    if *seat == '#' {
-                        count = count + 1;
+            let mut testrow = row as i16;
+            let mut testcol = col as i16;
+            let mut searching = true;
+            while searching && count < self.max_occup {
+                searching = self.ranged;
+                testrow = testrow + r;
+                testcol = testcol + c;
+                if testrow >= 0 && testcol >= 0 {
+                    if let Some(seat) = self.seats.get(&(testrow as u8, testcol as u8)) {
+                        //println!("  - {},{}: {}", rtest, ctest, *seat);
+                        if *seat == '#' {
+                            count = count + 1;
+                            // stop searching on an occupied seat
+                            searching = false;
+                        } else if self.ranged && *seat == 'L' {
+                            // stop searching on an empty seat
+                            searching = false;
+                        }
+                    } else {
+                        // stop searching if seat is out of bounds
+                        searching = false;
                     }
                 } else {
-                    //println!("  - {},{}: Not Found", rtest, ctest);
+                    // stop searching if seat is out of bounds
+                    searching = false;
                 }
             }
         }
@@ -127,19 +155,35 @@ impl SeatMap {
                 let seat = self.seats.get(&(row, col));
                 line.push(*seat.unwrap());
             }
-            //println!("{}", line);
+            println!("{}", line);
         }
-        //println!("++++ Ends ++++");
+        println!("++++ Ends ++++");
     }
 }
 
 fn day11_1(strings: &Vec<String>) -> u64 {
     let mut map = SeatMap::new(strings);
     let mut stable = false;
+    println!("Searching...");
     while (stable == false) {
         stable = map.seat_passengers();
-        map.print();
+        //map.print();
     }
+    map.count_occupied()
+}
+
+fn day11_2(strings: &Vec<String>) -> u64 {
+    let mut map = SeatMap::new(strings);
+    map.max_occup = 5;
+    map.ranged = true;
+    println!("Searching...");
+    let mut stable = false;
+    let mut count = 0;
+    while (stable == false) {
+        stable = map.seat_passengers();
+        count = count + 1;
+    }
+    //map.print();
     map.count_occupied()
 }
 
