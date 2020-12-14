@@ -8,12 +8,189 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let strings = get_strings("./data/input11");
-    //let strings = get_strings("./test/test11");
-    let result = day11_1(&strings);
+    let strings = get_strings("./data/input12");
+    //let strings = get_strings("./test/test12");
+    let result = day12_1(&strings);
     println!("Result: {}", result);
-    let result = day11_2(&strings);
+    let result = day12_2(&strings);
     println!("Result: {}", result);
+}
+
+#[cfg(test)]
+mod test12 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test12";
+
+    #[test]
+    fn test12_1() {
+        assert_eq!(day12_1(&get_strings(TEST_FILE)), 25);
+    }
+
+    #[test]
+    fn test12_2() {
+        assert_eq!(day12_2(&get_strings(TEST_FILE)), 286);
+    }
+}
+
+const NORTH: u16 = 0;
+const EAST: u16 = 90;
+const SOUTH: u16 = 180;
+const WEST: u16 = 270;
+
+struct Waypoint {
+    east: i64,
+    north: i64,
+    location: Location,
+}
+
+impl Waypoint {
+    fn north(&mut self, value: u16) {
+        self.north = self.north + value as i64;
+    }
+    fn south(&mut self, value: u16) {
+        self.north = self.north - value as i64;
+    }
+    fn east(&mut self, value: u16) {
+        self.east = self.east + value as i64;
+    }
+    fn west(&mut self, value: u16) {
+        self.east = self.east - value as i64;
+    }
+    fn left(&mut self, value: u16) {
+        // rotate waypoint counter-clockwise 'value' degrees
+        for _r in 0..value / 90 {
+            let north = self.north;
+            let east = self.east;
+            self.east = 0 - north;
+            self.north = east;
+        }
+    }
+    fn right(&mut self, value: u16) {
+        // rotate waypoint clockwise 'value' degrees
+        for _r in 0..value / 90 {
+            let north = self.north;
+            let east = self.east;
+            self.east = north;
+            self.north = 0 - east;
+        }
+    }
+    fn forward(&mut self, value: u16) {
+        for _i in 0..value {
+            self.location.north = self.location.north + self.north;
+            self.location.east = self.location.east + self.east;
+        }
+    }
+    fn manhattan(&self) -> u64 {
+        println!(
+            "Location: {:?} Waypoint: {}, {}",
+            self.location, self.east, self.north
+        );
+        self.location.manhattan()
+    }
+}
+
+#[derive(Debug)]
+struct Location {
+    heading: u16,
+    east: i64,
+    north: i64,
+}
+
+impl Location {
+    fn north(&mut self, value: u16) {
+        self.north = self.north + value as i64;
+    }
+    fn south(&mut self, value: u16) {
+        self.north = self.north - value as i64;
+    }
+    fn east(&mut self, value: u16) {
+        self.east = self.east + value as i64;
+    }
+    fn west(&mut self, value: u16) {
+        self.east = self.east - value as i64;
+    }
+    fn left(&mut self, value: u16) {
+        let heading: i32 = self.heading as i32 - value as i32;
+        if heading < 0 {
+            self.heading = (heading + 360) as u16;
+        } else {
+            self.heading = heading as u16;
+        }
+    }
+    fn right(&mut self, value: u16) {
+        self.heading = self.heading + value;
+        if self.heading >= 360 {
+            self.heading = self.heading - 360;
+        }
+    }
+    fn forward(&mut self, value: u16) {
+        match self.heading {
+            NORTH => self.north(value),
+            EAST => self.east(value),
+            SOUTH => self.south(value),
+            WEST => self.west(value),
+            _ => panic!("Invalid heading!"),
+        }
+    }
+    fn manhattan(&self) -> u64 {
+        println!("N{} E{} Heading: {}", self.north, self.east, self.heading);
+        (self.north.abs() + self.east.abs()) as u64
+    }
+}
+
+fn day12_1(strings: &Vec<String>) -> u64 {
+    let mut location = Location {
+        heading: EAST,
+        east: 0,
+        north: 0,
+    };
+    for i in strings {
+        let (act, val_s) = i.split_at(1);
+        if let Ok(val) = val_s.parse::<u16>() {
+            match act {
+                "N" => location.north(val),
+                "S" => location.south(val),
+                "E" => location.east(val),
+                "W" => location.west(val),
+                "L" => location.left(val),
+                "R" => location.right(val),
+                "F" => location.forward(val),
+                _ => panic!("Invalid action!"),
+            }
+        }
+        location.manhattan();
+    }
+    location.manhattan()
+}
+
+fn day12_2(strings: &Vec<String>) -> u64 {
+    let location = Location {
+        heading: EAST,
+        east: 0,
+        north: 0,
+    };
+    let mut waypoint = Waypoint {
+        east: 10,
+        north: 1,
+        location,
+    };
+    for i in strings {
+        let (act, val_s) = i.split_at(1);
+        if let Ok(val) = val_s.parse::<u16>() {
+            match act {
+                "N" => waypoint.north(val),
+                "S" => waypoint.south(val),
+                "E" => waypoint.east(val),
+                "W" => waypoint.west(val),
+                "L" => waypoint.left(val),
+                "R" => waypoint.right(val),
+                "F" => waypoint.forward(val),
+                _ => panic!("Invalid action!"),
+            }
+        }
+        waypoint.manhattan();
+    }
+    waypoint.manhattan()
 }
 
 #[cfg(test)]
