@@ -8,12 +8,82 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let strings = get_strings("./data/input12");
-    //let strings = get_strings("./test/test12");
-    let result = day12_1(&strings);
+    let strings = get_strings("./data/input13");
+    //let strings = get_strings("./test/test13");
+    let result = day13_1(&strings);
     println!("Result: {}", result);
-    let result = day12_2(&strings);
+    let result = day13_2(&strings);
     println!("Result: {}", result);
+}
+
+#[cfg(test)]
+mod test13 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test13";
+
+    #[test]
+    fn test13_1() {
+        assert_eq!(day13_1(&get_strings(TEST_FILE)), 295);
+    }
+}
+
+fn day13_1(strings: &Vec<String>) -> u64 {
+    let mut result: u64 = 0;
+    let mut earliest: u64 = u64::MAX;
+    if let Ok(timestamp) = strings.get(0).unwrap().parse::<u64>() {
+        let notes: Vec<&str> = strings.get(1).unwrap().split(',').collect();
+        for bus_s in notes {
+            if let Ok(bus) = bus_s.parse::<u64>() {
+                let wait = bus - (timestamp % bus);
+                if (wait < earliest) {
+                    earliest = wait;
+                    result = wait * bus;
+                    println!("Bus: {} Wait:{}", bus, wait);
+                }
+            }
+        }
+    }
+    result
+}
+
+fn day13_2(strings: &Vec<String>) -> u64 {
+    let mut result: u64 = 0;
+    let notes: Vec<&str> = strings.get(1).unwrap().split(',').collect();
+    let mut targets: Vec<(u64, u64)> = Vec::new();
+    let mut count = 0;
+    let mut first = 0;
+    let mut high = 0;
+    for bus_s in notes {
+        if let Ok(bus) = bus_s.parse::<u64>() {
+            if first == 0 {
+                first = bus;
+            }
+            targets.push((bus, count));
+            high = max(high, bus);
+            println!("Bus:{} Seq:{}", bus, count);
+        } else {
+            if bus_s == "x" {
+                // skip timeslot
+            } else {
+                println!("Invalid note: {}", bus_s);
+            }
+        }
+        count = count + 1;
+    }
+
+    let mut found = false;
+    let mut test: u64 = 0;
+    while found == false {
+        test = test + first;
+        //println!("{}", test);
+        for (bus, seq) in &targets {
+            found = test % *bus == *seq;
+            if found == false {
+                break;
+            }
+        }
+    }
+    test
 }
 
 #[cfg(test)]
