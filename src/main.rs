@@ -8,12 +8,82 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let strings = get_strings("./data/input13");
-    //let strings = get_strings("./test/test13");
-    let result = day13_1(&strings);
+    //let strings = get_strings("./data/input14");
+    let strings = get_strings("./test/test14");
+    let result = day14_1(&strings);
     println!("Result: {}", result);
-    let result = day13_2(&strings);
-    println!("Result: {}", result);
+}
+
+fn day14_1(strings: &Vec<String>) -> u64 {
+    lazy_static! {
+        static ref REMEM: Regex = Regex::new(r"mem\[(\d+)\]").unwrap();
+    }
+
+    let mut mask = Bitmask {
+        mask: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string(),
+    };
+    let mut memory: HashMap<u64, u64> = HashMap::new();
+    for s in strings {
+        let mut line = s.split('=');
+        if let Some(mut label) = line.next() {
+            label = label.trim();
+            if let Some(mut value_s) = line.next() {
+                value_s = value_s.trim();
+                if label == "mask" {
+                    mask = Bitmask {
+                        mask: value_s.to_string(),
+                    };
+                    println!("mask = {}", mask.mask);
+                } else {
+                    let cap = REMEM.captures(label);
+                    if cap.is_some() {
+                        if let Ok(mem) = cap.unwrap()[1].parse::<u64>() {
+                            if let Ok(value) = value_s.parse::<u64>() {
+                                let newvalue = mask.apply(value);
+                                memory.insert(mem, newvalue);
+                                println!("mem[{}] = {}", mem, newvalue);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    0
+}
+
+struct Bitmask {
+    mask: String,
+}
+
+impl Bitmask {
+    fn apply(&self, value: u64) -> u64 {
+        let mut newvalue = 0;
+        let mut i: u16 = 0;
+        for b in self.mask.chars().rev() {
+            match b {
+                'X' => newvalue = newvalue + Bitmask::clone(value, i),
+                '1' => newvalue = newvalue + Bitmask::set(value, i),
+                '0' => newvalue = newvalue + Bitmask::clear(value, i),
+                _ => panic!("Unexpected vlaue in bitmask"),
+            }
+            i = i + 1;
+        }
+        newvalue
+    }
+
+    fn clone(value: u64, bit: u16) -> u64 {
+        value & (bit * 2) as u64
+    }
+
+    fn set(value: u64, bit: u16) -> u64 {
+        (bit * 2) as u64
+    }
+
+    fn clear(value: u64, bit: u16) -> u64 {
+        0
+    }
 }
 
 #[cfg(test)]
