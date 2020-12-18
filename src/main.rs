@@ -8,10 +8,21 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    //let strings = get_strings("./data/input14");
-    let strings = get_strings("./test/test14");
+    let strings = get_strings("./data/input14");
+    //let strings = get_strings("./test/test14");
     let result = day14_1(&strings);
     println!("Result: {}", result);
+}
+
+#[cfg(test)]
+mod test14 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test14";
+
+    #[test]
+    fn test14_1() {
+        assert_eq!(day14_1(&get_strings(TEST_FILE)), 165);
+    }
 }
 
 fn day14_1(strings: &Vec<String>) -> u64 {
@@ -49,8 +60,11 @@ fn day14_1(strings: &Vec<String>) -> u64 {
             }
         }
     }
-
-    0
+    let mut result: u64 = 0;
+    for (_k, i) in memory {
+        result = result + i;
+    }
+    result
 }
 
 struct Bitmask {
@@ -60,29 +74,18 @@ struct Bitmask {
 impl Bitmask {
     fn apply(&self, value: u64) -> u64 {
         let mut newvalue = 0;
-        let mut i: u16 = 0;
+        let mut i: u64 = 1;
         for b in self.mask.chars().rev() {
             match b {
-                'X' => newvalue = newvalue + Bitmask::clone(value, i),
-                '1' => newvalue = newvalue + Bitmask::set(value, i),
-                '0' => newvalue = newvalue + Bitmask::clear(value, i),
-                _ => panic!("Unexpected vlaue in bitmask"),
+                'X' => newvalue = newvalue + (value & i),
+                '1' => newvalue = newvalue + i,
+                '0' => newvalue = newvalue,
+                _ => panic!("Unexpected value in bitmask"),
             }
-            i = i + 1;
+            i = i << 1;
         }
+
         newvalue
-    }
-
-    fn clone(value: u64, bit: u16) -> u64 {
-        value & (bit * 2) as u64
-    }
-
-    fn set(value: u64, bit: u16) -> u64 {
-        (bit * 2) as u64
-    }
-
-    fn clear(value: u64, bit: u16) -> u64 {
-        0
     }
 }
 
