@@ -12,51 +12,69 @@ fn main() {
     //let strings = get_strings("./test/test14");
     let result = day14_1(&strings);
     println!("Result: {}", result);
+    let result = day14_2(&strings);
+    println!("Result: {}", result);
 }
 
 #[cfg(test)]
 mod test14 {
     use super::*;
     static TEST_FILE: &str = "./test/test14";
+    static TEST_FILE_2: &str = "./test/test14_2";
 
     #[test]
     fn test14_1() {
         assert_eq!(day14_1(&get_strings(TEST_FILE)), 165);
     }
+
+    #[test]
+    fn test14_2() {
+        assert_eq!(day14_2(&get_strings(TEST_FILE_2)), 208);
+    }
 }
 
 fn day14_1(strings: &Vec<String>) -> u64 {
-    lazy_static! {
-        static ref REMEM: Regex = Regex::new(r"mem\[(\d+)\]").unwrap();
-    }
-
     let mut mask = Bitmask {
         mask: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string(),
     };
     let mut memory: HashMap<u64, u64> = HashMap::new();
     for s in strings {
-        let mut line = s.split('=');
-        if let Some(mut label) = line.next() {
-            label = label.trim();
-            if let Some(mut value_s) = line.next() {
-                value_s = value_s.trim();
-                if label == "mask" {
-                    mask = Bitmask {
-                        mask: value_s.to_string(),
-                    };
-                    println!("mask = {}", mask.mask);
-                } else {
-                    let cap = REMEM.captures(label);
-                    if cap.is_some() {
-                        if let Ok(mem) = cap.unwrap()[1].parse::<u64>() {
-                            if let Ok(value) = value_s.parse::<u64>() {
-                                let newvalue = mask.apply(value);
-                                memory.insert(mem, newvalue);
-                                println!("mem[{}] = {}", mem, newvalue);
-                            }
-                        }
-                    }
-                }
+        let (label, value) = parse_line(s);
+        if label == "mask" {
+            mask = Bitmask {
+                mask: value.to_string(),
+            };
+        } else {
+            let (mem, val) = get_mem(label, value);
+            let newvalue = mask.decode_value(val);
+            memory.insert(mem, newvalue);
+            //println!("mem[{}] = {}", mem, newvalue);
+        }
+    }
+    let mut result: u64 = 0;
+    for (_k, i) in memory {
+        result = result + i;
+    }
+    result
+}
+
+fn day14_2(strings: &Vec<String>) -> u64 {
+    let mut mask = Bitmask {
+        mask: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string(),
+    };
+    let mut memory: HashMap<u64, u64> = HashMap::new();
+    for s in strings {
+        let (label, value) = parse_line(s);
+        if label == "mask" {
+            mask = Bitmask {
+                mask: value.to_string(),
+            };
+        } else {
+            let (mem, val) = get_mem(label, value);
+            let addrs = mask.decode_address(mem);
+            for a in addrs {
+                memory.insert(a, val);
+                //println!("a[0b{:08b} / {}] = {}", a, a, val);
             }
         }
     }
@@ -67,12 +85,39 @@ fn day14_1(strings: &Vec<String>) -> u64 {
     result
 }
 
+fn parse_line(line: &str) -> (&str, &str) {
+    let mut parts = line.split('=');
+    if let Some(mut label) = parts.next() {
+        label = label.trim();
+        if let Some(mut value) = parts.next() {
+            value = value.trim();
+            return (label, value);
+        }
+    }
+    panic!("Could not parse line: {}", line)
+}
+
+fn get_mem(label: &str, value: &str) -> (u64, u64) {
+    lazy_static! {
+        static ref REMEM: Regex = Regex::new(r"mem\[(\d+)\]").unwrap();
+    }
+    let cap = REMEM.captures(label);
+    if cap.is_some() {
+        if let Ok(mem) = cap.unwrap()[1].parse::<u64>() {
+            if let Ok(val) = value.parse::<u64>() {
+                return (mem, val);
+            }
+        }
+    }
+    panic!("Invalid mem= entry: {}", label)
+}
+
 struct Bitmask {
     mask: String,
 }
 
 impl Bitmask {
-    fn apply(&self, value: u64) -> u64 {
+    fn decode_value(&self, value: u64) -> u64 {
         let mut newvalue = 0;
         let mut i: u64 = 1;
         for b in self.mask.chars().rev() {
@@ -86,6 +131,37 @@ impl Bitmask {
         }
 
         newvalue
+    }
+
+    fn decode_address(&self, address: u64) -> Vec<u64> {
+        //println!("Mask: {}", self.mask);
+        //println!("Address before mask: 0b{:08b} / {}", address, address);
+        let mut addrs: Vec<u64> = Vec::new();
+        let mut i = 1;
+        addrs.push(address);
+        for b in self.mask.chars().rev() {
+            let mut new_addrs: Vec<u64> = Vec::new();
+            for a in addrs.iter_mut() {
+                match b {
+                    'X' => {
+                        new_addrs.push(*a | i); // add new addr with bit set
+                        *a &= !i; // unset bit in existing address
+                    }
+                    '1' => {
+                        *a |= i;
+                    }
+                    '0' => {
+                        // unchanged
+                    }
+                    _ => panic!("Unexpected value in bitmask"),
+                }
+            }
+            for n in new_addrs {
+                addrs.push(n)
+            }
+            i = i << 1;
+        }
+        addrs
     }
 }
 
