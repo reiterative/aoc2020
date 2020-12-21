@@ -8,12 +8,82 @@ use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let strings = get_strings("./data/input14");
-    //let strings = get_strings("./test/test14");
-    let result = day14_1(&strings);
+    //let strings = get_strings("./data/input21");
+    let strings = get_strings("./test/test21");
+    let result = day21_1(&strings);
     println!("Result: {}", result);
-    let result = day14_2(&strings);
-    println!("Result: {}", result);
+    //let result = day14_2(&strings);
+    //println!("Result: {}", result);
+}
+
+#[cfg(test)]
+mod test21 {
+    use super::*;
+    static TEST_FILE: &str = "./test/test21";
+
+    #[test]
+    fn test21_1() {
+        assert_eq!(day21_1(&get_strings(TEST_FILE)), 5);
+    }
+}
+
+fn day21_1(strings: &Vec<String>) -> u64 {
+    lazy_static! {
+        static ref REING: Regex = Regex::new(r"([a-z ]*) \(contains ([a-z, ]*)\)").unwrap();
+    }
+    let mut i_map: HashMap<String, Ingredient> = HashMap::new();
+    for s in strings {
+        let cap = REING.captures(s);
+        if cap.is_some() {
+            let parts = cap.unwrap();
+            let ingreds: Vec<&str> = parts[1].split(' ').collect();
+            let allergens: Vec<&str> = parts[2].split(',').collect();
+            for i in ingreds.iter() {
+                if let Some(ing) = i_map.get_mut(*i) {
+                    // Update existing ingredient in the map
+                    for a in allergens.iter() {
+                        if let Some(a_count) = ing.a_map.get_mut(a.trim()) {
+                            // Allergen is already in map for this ingredient
+                            *a_count = *a_count + 1;
+                        } else {
+                            // New allergen for this ingredient
+                            ing.a_map.insert(a.trim().to_string(), 1);
+                        }
+                    }
+                } else {
+                    // Add new ingredient to the map
+                    let mut a_map: HashMap<String, u64> = HashMap::new();
+                    for a in allergens.iter() {
+                        a_map.insert(a.trim().to_string(), 1);
+                    }
+                    i_map.insert(i.to_string(), Ingredient { a_map, count: 1 });
+                }
+            }
+        } else {
+            panic!("Could not parse line: {}", s);
+        }
+    }
+    let mut result: u64 = 0;
+    println!("The following ingredients contain no known allergens:");
+    for (i, ing) in i_map.iter() {
+        let mut confirmed = false;
+        for (a, count) in ing.a_map.iter() {
+            if *count > 1 {
+                confirmed = true;
+                break;
+            }
+        }
+        if confirmed == false {
+            println!("- {}", i);
+            result = result + ing.count;
+        }
+    }
+    result
+}
+
+struct Ingredient {
+    a_map: HashMap<String, u64>,
+    count: u64,
 }
 
 #[cfg(test)]
